@@ -1,9 +1,6 @@
 class SessionsController < ApplicationController
-	def new
-	end
 
 	def login
-		token_url = 'https://api.twitter.com/oauth/request_token'
 		consumer_key = 'hO1bdfU2Mah15C8RggwQ'
 		consumer_secret = 'HPu1cR8HesktB0n0pUAGLvuLeki9N6PE1LajFkpqaA'
 
@@ -25,74 +22,25 @@ class SessionsController < ApplicationController
 		request_token = OAuth::RequestToken.new(oauth, session[:token], session[:secret])
 		access_token = request_token.get_access_token(oauth_verifier: params[:oauth_verifier])
 
-		redirect_to about_path
-	end
+		session[:token] = access_token.token
+		session[:secret] = access_token.secret
+		#session[:access_token] = access_token
 
-	def create
-		token_url = 'https://api.twitter.com/oauth/request_token'
-		consumer_key = 'hO1bdfU2Mah15C8RggwQ'
+		response = oauth.request(:get, '/1.1/account/verify_credentials.json', access_token, { :scheme => :query_string })
+		user_info = JSON.parse(response.body)
 
+		user = User.find_by_name(user_info['screen_name'])
+		if (user.nil?) 
+			user = User.create(email: "#{user_info['screen_name']}@twitter.com", name: user_info['screen_name'], twitter_image: user_info['profile_image_url'] )
+		end
+
+		sign_in user
+		redirect_to user
 	end
 
 	def destroy
-	end
-
-
-	def get_token
-		token_url = 'https://api.twitter.com/oauth/request_token'
-		consumer_key = 'hO1bdfU2Mah15C8RggwQ'
-
-		#Create a random alpha numeric nonce
-		nonce = ('a'..'z').to_a.concat( ('A'..'Z').to_a ).concat( (0..9).to_a ).shuffle[0..30].join
-
-		# construct parameter map for signature
-		params = { oauth_signature_method: 'HMAC-SHA1', oauth_version: 1.0, oauth_timestamp: Time.now.to_i, oauth_nonce: nonce, oauth_consumer_key: consumer_key }
-		params.merge!( oauth_callback: URI.escape("https://127.0.0.1:3000/signin"))
-
-		#sign and add signature parameter
-		signature = sign('POST', token_url, params)
-		params.merge!( oauth_signature: signature)
-
-		# send request
-		uri = URI(token_url)
-		req = Net::HTTP::Post.new(uri.path)
-		req['Authorization'] = "OAuth " + params.sort.map{ |k,v| "#{k.to_s}=\"#{URI.escape(v)}\"" }.join(',')
-		res = Net::HTTP.start(uri.hostname, uri.port, :use_ssl => uri.scheme == 'https') do |http|
-			http.request(req)
-		end
-
-		if res.code != Net::HTTPSuccess
-			flash.now[:error] = 'Failed to contact Twitter'
-			render 'new'
-		end
-
-		res_params = {}
-		resp_param_list = res.body.split('&')
-		resp_param_list.each do |param|
-			kv = param.split('=')
-			res_params[kv[0]] = kv[1]
-		end
-
-		oauth_token = res_params['oauth_token']
-		oauth_token_secret = res_params['oaut_token_secret']
-		oauth_callback_confirmed = res_params['oauth_callback_confirmed']
-	end
-
-	def sign(method, baseurl,  params = {})
-		consumer_secret = 'HPu1cR8HesktB0n0pUAGLvuLeki9N6PE1LajFkpqaA'
-
-		# key=value joined with &
-		param_string = params.sort.map { |k,v| "#{k.to_s}=#{URI.escape(v)}"}.join('&')
-
-		# upcase method, baseurl and param string joined with &. NOTE only 2 &s. All the &s in the param string are url encoded
-		sig_base = "#{method.upcase}&#{URI.escape(baseurl)}&#{URI.escape(param_string)}"
-		
-		# the signing key is the consumer secret and the token secret joined with &. If token secret isn't know, then the key ends with a trailing &
-		key = "#{URI.escape(consumer_secret)}&" 
-		hmac = HMAC::SHA1.new(key)
-		hmac.update(sig_base)
-
-		Base64.urlsafe_encode64(hnac.digest)
+		sign_out
+    	redirect_to root_url
 	end
 
 end
