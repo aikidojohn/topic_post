@@ -1,11 +1,16 @@
 TopicPost::Application.routes.draw do
-  get "static_pages/home"
-  get "static_pages/help"
-  get "static_pages/about"
+  root to: 'static_pages#home'
+
+  match '/help', to: 'static_pages#help'
+  match '/about', to: 'static_pages#about'
+
+  match '/signin',  to: 'sessions#login'
+  match '/callback',  to: 'sessions#login_callback'
+  match '/signout', to: 'sessions#destroy', via: :delete
 
   resources :posts
-
   resources :topics
+  #resources :sessions, only: [:new, :create, :destroy]
 
   # The priority is based upon order of creation:
   # first created -> highest priority.

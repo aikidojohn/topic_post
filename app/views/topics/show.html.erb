@@ -1,15 +1,16 @@
 <p id="notice"><%= notice %></p>
+<div class="container">
+	<h1><%= @topic.title %></h1>
+	<h2 class="author">started by <%= @topic.user %></h2>
+</div>
 
-<p>
-  <b>Title:</b>
-  <%= @topic.title %>
-</p>
-
-<p>
-  <b>User:</b>
-  <%= @topic.user %>
-</p>
-
+<% if @topic.posts.any? %>
+<div class="container">
+	<ol class="posts">
+		<%= render @posts %>
+	</ol>
+</div>
+<% end %>
 
 <%= link_to 'Edit', edit_topic_path(@topic) %> |
 <%= link_to 'Back', topics_path %>

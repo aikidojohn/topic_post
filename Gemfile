@@ -1,6 +1,9 @@
 source 'https://rubygems.org'
 
 gem 'rails', '3.2.8'
+gem 'bootstrap-sass'
+gem 'oauth'
+gem 'ruby-hmac'
 
 # Bundle edge Rails instead:
 # gem 'rails', :git => 'git://github.com/rails/rails.git'
@@ -10,7 +13,7 @@ group :development, :test do
 	gem 'rspec-rails', '2.11.0'
 	gem 'guard-rspec', '0.5.5'
 	gem 'guard-spork', :git => 'https://github.com/guard/guard-spork.git'
-    gem 'spork', '0.9.0'
+  gem 'spork', '0.9.0'
 end
 
 
